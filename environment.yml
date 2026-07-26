@@ -1,0 +1,18 @@
+name: kit-inhibitor-binding-prediction
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - rdkit
+  - scikit-learn
+  - xgboost
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+  - jupyterlab
+  - pip
+  - pip:
+      - chembl_webresource_client
+      - transformers
+      - torch
