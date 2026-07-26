@@ -4,14 +4,14 @@ Step-by-step build plan derived from [Design Doc.md](Design%20Doc.md) and [READM
 
 ## Phase 0 — Environment & Scaffolding
 
-- [ ] Create repo structure per Design Doc: `data/raw/`, `data/processed/`, `notebooks/`, `src/`, `results/figures/`.
-- [ ] Write `environment.yml` (Python 3.10+, RDKit, `chembl_webresource_client`, `transformers`, scikit-learn, XGBoost, pandas, NumPy, matplotlib/seaborn).
-- [ ] Create and activate the conda/venv environment; verify RDKit imports and a HuggingFace model loads.
+- [x] Create repo structure per Design Doc: `data/raw/`, `data/processed/`, `notebooks/`, `src/`, `results/figures/`.
+- [x] Write `environment.yml` (Python 3.10+, RDKit, `chembl_webresource_client`, `transformers`, scikit-learn, XGBoost, pandas, NumPy, matplotlib/seaborn).
+- [x] Create and activate the conda/venv environment; verify RDKit imports and a HuggingFace model loads.
 - [ ] Initialize `src/__init__.py` and stub modules: `data_utils.py`, `featurization.py`, `models.py`, `evaluation.py`.
 
 ## Phase 1 — Data Collection (`notebooks/01_data_collection.ipynb`)
 
-- [ ] Query ChEMBL for the human KIT target (UniProt P10721) via `chembl_webresource_client`.
+- [x] Query ChEMBL for the human KIT target (UniProt P10721) via `chembl_webresource_client`. — resolved to `CHEMBL1936` (Mast/stem cell growth factor receptor Kit, Homo sapiens), confirmed cross-reference to UniProt P10721.
 - [ ] Pull all bioactivity records: SMILES, assay type (IC50/Ki/Kd/EC50), reported value + units, assay/document metadata.
 - [ ] Save raw, unmodified pull to `data/raw/`.
 - [ ] Sanity-check record count and spot-check a few known compounds (e.g., imatinib, dasatinib) are present.
