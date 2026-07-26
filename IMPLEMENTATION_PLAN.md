@@ -22,7 +22,7 @@ Step-by-step build plan derived from [Design Doc.md](Design%20Doc.md) and [READM
 Implements Design Doc §5.1 and the quality issues in §4.4.
 
 - [x] Convert potency values to pIC50/pKi (-log10 molar concentration) on a common scale. — computed for 8,547/8,703 rows in `notebooks/02_data_cleaning.ipynb`; cross-checked against ChEMBL's own `pchembl_value` (max deviation 0.0055).
-- [ ] Explicit policy for mixed assay types (IC50 vs Ki vs Kd) — document what's combined and why.
+- [x] Explicit policy for mixed assay types (IC50 vs Ki vs Kd) — document what's combined and why. — pooled IC50+Ki+Kd (8,497 rows), dropped EC50 (206 rows, ~2%); cross-type divergence for shared compounds is 0.45-0.80 log units median |diff|, judged comparable to paper-to-paper noise rather than a distinct correction problem. `standard_type` retained as a column.
 - [ ] Deduplicate/aggregate repeated measurements per compound (e.g., median of log-transformed values).
 - [ ] Handle censored values (">10000 nM" etc.) — decide drop vs. cap vs. flag, and implement consistently.
 - [ ] Canonicalize SMILES via RDKit to collapse representation duplicates.
