@@ -12,10 +12,10 @@ Step-by-step build plan derived from [Design Doc.md](Design%20Doc.md) and [READM
 ## Phase 1 — Data Collection (`notebooks/01_data_collection.ipynb`)
 
 - [x] Query ChEMBL for the human KIT target (UniProt P10721) via `chembl_webresource_client`. — resolved to `CHEMBL1936` (Mast/stem cell growth factor receptor Kit, Homo sapiens), confirmed cross-reference to UniProt P10721.
-- [ ] Pull all bioactivity records: SMILES, assay type (IC50/Ki/Kd/EC50), reported value + units, assay/document metadata.
-- [ ] Save raw, unmodified pull to `data/raw/`.
-- [ ] Sanity-check record count and spot-check a few known compounds (e.g., imatinib, dasatinib) are present.
-- [ ] Note in README/notebook: actual record count retrieved vs. the "several hundred to a few thousand" estimate in Design Doc §4.1.
+- [x] Pull all bioactivity records: SMILES, assay type (IC50/Ki/Kd/EC50), reported value + units, assay/document metadata. — 8,703 records pulled via `notebooks/01_data_collection.ipynb`.
+- [x] Save raw, unmodified pull to `data/raw/`. — saved as `chembl_kit_bioactivity_raw.csv` (gitignored as reproducible; regenerate by re-running the notebook).
+- [x] Sanity-check record count and spot-check a few known compounds (e.g., imatinib, dasatinib) are present. — imatinib: 69 records, dasatinib: 36, avapritinib: 7.
+- [x] Note in README/notebook: actual record count retrieved vs. the "several hundred to a few thousand" estimate in Design Doc §4.1. — 8,703 records, upper end of estimate; also found 2,291 records (~26%) mention D816V in assay descriptions, more mutant-KIT data than §4.4 anticipated.
 
 ## Phase 2 — Data Cleaning & Standardization (`notebooks/02_data_cleaning.ipynb`, `src/data_utils.py`)
 

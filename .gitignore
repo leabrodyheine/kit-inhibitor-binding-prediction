@@ -1,0 +1,13 @@
+# Data pulls are reproducible via the ChEMBL API (see notebooks/01_data_collection.ipynb)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Jupyter / Python
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
