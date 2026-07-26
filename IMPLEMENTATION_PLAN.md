@@ -27,8 +27,8 @@ Implements Design Doc §5.1 and the quality issues in §4.4.
 - [x] Handle censored values (">10000 nM" etc.) — decide drop vs. cap vs. flag, and implement consistently. — capped rather than dropped: 1,556/5,649 groups (28%) have no exact measurement; 1,476 (95% of those) capped at their tightest one-directional bound and flagged `censored=True`/`censored_direction`, only 80 (5%, conflicting or no usable relation at all) dropped. Avoids worsening ChEMBL's known bias against inactive compounds (Design Doc §9).
 - [x] Canonicalize SMILES via RDKit to collapse representation duplicates. — combined exact-median (4,093) + capped-censored (1,476) into one `df_clean` table (5,569 rows), canonicalized via RDKit; 4 rows dropped for missing/unparseable SMILES, 0 discrepancies vs. ChEMBL's own canonical_smiles, 0 duplicate structures within a variant. Final: 5,565 rows.
 - [x] Flag/segment records by wild-type vs. D816V-mutant assay target where annotated, in preparation for Phase 5. — done ahead of schedule, as part of the dedup step above: naively deduping ignoring variant would have averaged WT and D816V together, destroying signal — 746 compounds have both, and 226 (30%) differ by >1 log unit between them. WT: 6,206 records, D816V: 2,291.
-- [ ] Save cleaned dataset to `data/processed/`.
-- [ ] Document every filtering decision inline (row counts before/after each step) — this is called out explicitly in Design Doc §8 Day 1.
+- [x] Save cleaned dataset to `data/processed/`. — saved as `kit_bioactivity_clean.csv` (5,565 rows; gitignored as reproducible, regenerate by re-running the notebook).
+- [x] Document every filtering decision inline (row counts before/after each step) — this is called out explicitly in Design Doc §8 Day 1. — every section has inline before/after counts; §7 adds a consolidated funnel table (8,703 raw → 5,565 clean) for a single-glance summary.
 
 ## Phase 3 — Featurization (`notebooks/03_featurization.ipynb`, `src/featurization.py`)
 
