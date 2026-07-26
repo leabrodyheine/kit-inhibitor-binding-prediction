@@ -52,8 +52,9 @@ Implements Design Doc §5.3–§5.5.
 - [ ] Generate diagnostic plots (predicted vs. actual, residuals) to `results/figures/`.
 
 **Results (fill in after running):**
+
 | Model | RMSE | R² | Spearman ρ |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | XGBoost + ECFP | | | |
 | MLP + ChemBERTa | | | |
 
