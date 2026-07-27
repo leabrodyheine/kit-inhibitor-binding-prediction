@@ -1,10 +1,10 @@
-"""Unit tests for src/evaluation.py (Phase 4 steps 4-5: held-out evaluation
-metrics and the bootstrap-based direct model comparison)."""
+"""Unit tests for src/evaluation.py (Phase 4 steps 4-6: held-out evaluation
+metrics, the bootstrap-based direct model comparison, and diagnostic plots)."""
 
 import numpy as np
 import pytest
 
-from evaluation import bootstrap_compare, evaluate_regression
+from evaluation import bootstrap_compare, evaluate_regression, plot_diagnostics
 
 
 class TestEvaluateRegression:
@@ -100,3 +100,53 @@ class TestBootstrapCompare:
         result_a = bootstrap_compare(y_true, preds_good, preds_bad, n_boot=200, seed=42)
         result_b = bootstrap_compare(y_true, preds_good, preds_bad, n_boot=200, seed=42)
         assert result_a == result_b
+
+
+class TestPlotDiagnostics:
+    def test_returns_figure_with_one_column_per_model(self, clear_winner_data):
+        y_true, preds_good, preds_bad = clear_winner_data
+        fig = plot_diagnostics(y_true, {"Good model": preds_good, "Bad model": preds_bad})
+        try:
+            assert fig.axes[0].get_figure() is fig
+            # 2 rows (predicted-vs-actual, residuals) x 2 models = 4 axes
+            assert len(fig.axes) == 4
+        finally:
+            import matplotlib.pyplot as plt
+
+            plt.close(fig)
+
+    def test_single_model_still_works(self, clear_winner_data):
+        y_true, preds_good, _ = clear_winner_data
+        fig = plot_diagnostics(y_true, {"Only model": preds_good})
+        try:
+            assert len(fig.axes) == 2
+        finally:
+            import matplotlib.pyplot as plt
+
+            plt.close(fig)
+
+    def test_panel_titles_name_their_model(self, clear_winner_data):
+        y_true, preds_good, preds_bad = clear_winner_data
+        fig = plot_diagnostics(y_true, {"Good model": preds_good, "Bad model": preds_bad})
+        try:
+            titles = " ".join(ax.get_title() for ax in fig.axes)
+            assert "Good model" in titles
+            assert "Bad model" in titles
+        finally:
+            import matplotlib.pyplot as plt
+
+            plt.close(fig)
+
+    def test_saves_a_nonempty_file(self, clear_winner_data, tmp_path):
+        y_true, preds_good, preds_bad = clear_winner_data
+        save_path = tmp_path / "diagnostics.png"
+        fig = plot_diagnostics(
+            y_true, {"Good model": preds_good, "Bad model": preds_bad}, save_path=save_path
+        )
+        try:
+            assert save_path.exists()
+            assert save_path.stat().st_size > 0
+        finally:
+            import matplotlib.pyplot as plt
+
+            plt.close(fig)
