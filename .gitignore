@@ -4,6 +4,12 @@ data/raw/*
 data/processed/*
 !data/processed/.gitkeep
 
+# Trained models are reproducible by re-running notebooks/04_model_training.ipynb
+# (fixed seeds); the comparison metrics table (results/model_comparison.csv) is
+# the actual small deliverable and is tracked.
+results/models/*
+!results/models/.gitkeep
+
 # Jupyter / Python
 .ipynb_checkpoints/
 __pycache__/
