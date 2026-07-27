@@ -1,0 +1,8 @@
+{
+    "python.defaultInterpreterPath": "/Users/leabrody-heine2/anaconda3/envs/kit-inhibitor-binding-prediction/bin/python",
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
+}
