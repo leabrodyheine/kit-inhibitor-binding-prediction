@@ -43,7 +43,7 @@ Implements Design Doc §5.2.
 
 Implements Design Doc §5.3–§5.5.
 
-- [ ] Implement **scaffold split** (not random split) for train/test — group by Bemis-Murcko scaffold before splitting.
+- [x] Implement **scaffold split** (not random split) for train/test — group by Bemis-Murcko scaffold before splitting. — `scaffold_split()`/`bemis_murcko_scaffold()` added to `src/data_utils.py`; groups whole scaffolds (largest-first) into train until an 80% target, remainder to test. Result: 4,452 train rows (814 scaffolds) / 1,113 test rows (1,113 scaffolds), zero scaffold overlap confirmed directly; all 925 compounds with paired WT/D816V measurements landed in train under this seed (relevant for Phase 5). Deterministic given a seed.
 - [ ] Train baseline model: XGBoost on ECFP fingerprints.
 - [ ] Train comparison model: small MLP head on frozen ChemBERTa embeddings.
 - [ ] Evaluate both on held-out set: RMSE, R², Spearman rank correlation.
