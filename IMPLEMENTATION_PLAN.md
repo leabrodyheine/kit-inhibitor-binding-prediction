@@ -44,7 +44,7 @@ Implements Design Doc §5.2.
 Implements Design Doc §5.3–§5.5.
 
 - [x] Implement **scaffold split** (not random split) for train/test — group by Bemis-Murcko scaffold before splitting. — `scaffold_split()`/`bemis_murcko_scaffold()` added to `src/data_utils.py`; groups whole scaffolds (largest-first) into train until an 80% target, remainder to test. Result: 4,452 train rows (814 scaffolds) / 1,113 test rows (1,113 scaffolds), zero scaffold overlap confirmed directly; all 925 compounds with paired WT/D816V measurements landed in train under this seed (relevant for Phase 5). Deterministic given a seed.
-- [ ] Train baseline model: XGBoost on ECFP fingerprints.
+- [x] Train baseline model: XGBoost on ECFP fingerprints. — `train_xgboost_ecfp()` added to `src/models.py`, trained on the 4,452-row scaffold-split train set. Sanity-checked (not the formal Phase 4 step 4 evaluation): training R² = 0.809, held-out predictions non-degenerate and positively correlated with truth (Pearson r = 0.725 on the 1,113-row test set) — no hyperparameter tuning done yet.
 - [ ] Train comparison model: small MLP head on frozen ChemBERTa embeddings.
 - [ ] Evaluate both on held-out set: RMSE, R², Spearman rank correlation.
 - [ ] Compare baseline vs. embedding model directly — do not assume the more sophisticated model wins (per Design Doc §5.3 caution, echoing the dissertation's GAN-vs-augmentation finding).
