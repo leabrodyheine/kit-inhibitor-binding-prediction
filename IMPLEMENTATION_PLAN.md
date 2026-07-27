@@ -7,7 +7,7 @@ Step-by-step build plan derived from [Design Doc.md](Design%20Doc.md) and [READM
 - [x] Create repo structure per Design Doc: `data/raw/`, `data/processed/`, `notebooks/`, `src/`, `results/figures/`.
 - [x] Write `environment.yml` (Python 3.10+, RDKit, `chembl_webresource_client`, `transformers`, scikit-learn, XGBoost, pandas, NumPy, matplotlib/seaborn).
 - [x] Create and activate the conda/venv environment; verify RDKit imports and a HuggingFace model loads.
-- [ ] Initialize `src/__init__.py` and stub modules: `data_utils.py`, `featurization.py`, `models.py`, `evaluation.py`.
+- [x] Initialize `src/__init__.py` and stub modules: `data_utils.py`, `featurization.py`, `models.py`, `evaluation.py`. — `featurization.py` filled in with real implementations as part of Phase 3 (below); `data_utils.py`/`models.py`/`evaluation.py` left as stubs for Phase 4.
 
 ## Phase 1 — Data Collection (`notebooks/01_data_collection.ipynb`)
 
@@ -34,10 +34,10 @@ Implements Design Doc §5.1 and the quality issues in §4.4.
 
 Implements Design Doc §5.2.
 
-- [ ] Baseline: compute ECFP (Morgan) fingerprints via RDKit for all compounds.
-- [ ] Embedding-based: generate ChemBERTa embeddings (HuggingFace, frozen) for all compounds.
-- [ ] Cache both feature sets to `data/processed/` (avoid recomputation in later notebooks).
-- [ ] Confirm feature matrices align row-for-row with the cleaned dataset (no silent SMILES drops/reordering).
+- [x] Baseline: compute ECFP (Morgan) fingerprints via RDKit for all compounds. — radius 2, 2048 bits, via `rdFingerprintGenerator`; computed in `notebooks/03_featurization.ipynb` using `src/featurization.py`.
+- [x] Embedding-based: generate ChemBERTa embeddings (HuggingFace, frozen) for all compounds. — `seyonec/ChemBERTa-zinc-base-v1`, frozen, mean-pooled over non-padding tokens (768-dim).
+- [x] Cache both feature sets to `data/processed/` (avoid recomputation in later notebooks). — saved as `ecfp_fingerprints.npy` (5,565 × 2,048, uint8) and `chemberta_embeddings.npy` (5,565 × 768, float32); gitignored as reproducible like other processed artifacts.
+- [x] Confirm feature matrices align row-for-row with the cleaned dataset (no silent SMILES drops/reordering). — featurized 4,640 unique compounds once (5,565 rows include duplicate SMILES across WT/D816V variant pairs), then expanded via SMILES→index lookup back to the full 5,565-row order; shape asserted against `len(df)` and 5 random rows spot-checked by direct recomputation.
 
 ## Phase 4 — Modeling & Evaluation (`notebooks/04_model_training.ipynb`, `src/models.py`, `src/evaluation.py`)
 
