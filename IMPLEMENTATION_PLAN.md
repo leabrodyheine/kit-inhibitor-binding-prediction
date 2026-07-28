@@ -66,7 +66,7 @@ Implements Design Doc §5.3–§5.5.
 
 Implements Design Doc §5.6, using data isolated in Phase 2 and anchors from §4.3.
 
-- [ ] Identify compounds with both wild-type and D816V bioactivity records; compute selectivity ratio (WT potency / mutant potency).
+- [x] Identify compounds with both wild-type and D816V bioactivity records; compute selectivity ratio (WT potency / mutant potency). — `get_variant_pairs()` added to `src/data_utils.py`. 925 compounds have both records (matches Phase 4's count); saved to `data/processed/selectivity_pairs.csv`. Distribution is broadly spread, not concentrated near 1 (37.6% >2-fold WT-potent, 27.6% >2-fold D816V-potent, 34.8% comparable). Data-quality check: 65/925 (7.0%) have both sides censored at the same cap, making their ratio=1.0 a censoring artifact rather than real equipotency — flagged via a new `both_censored` column rather than silently inflating the "comparable" bucket. Imatinib (in the table): ratio=9.07, directionally consistent with its known D816V efficacy loss. Dasatinib: **not** in the table — no D816V row survived Phase 2's cleaning, so its §4.3 anchor values remain an external literature reference, not independently reproduced from this dataset.
 - [ ] Apply the Phase 4 potency model separately to wild-type- and mutant-labeled subsets.
 - [ ] Check the model reproduces the known direction of the two anchor points:
   - Dasatinib: ~37 nM (D816V) vs. ~79 nM (WT) — comparable potency both ways.
