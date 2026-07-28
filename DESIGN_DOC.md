@@ -127,7 +127,8 @@ Two representations, compared against each other:
 
 kit-inhibitor-binding-prediction/
 ├── README.md
-├── DESIGN.md
+├── DESIGN_DOC.md
+├── IMPLEMENTATION_PLAN.md
 ├── data/
 │ ├── raw/ # unmodified ChEMBL pulls
 │ └── processed/ # cleaned, standardized datasets
@@ -144,8 +145,11 @@ kit-inhibitor-binding-prediction/
 │ ├── models.py
 │ ├── evaluation.py
 │ └── structural_utils.py
+├── tests/ # unit tests for src/, mirroring one file per module
 ├── results/
-│ └── figures/
+│ ├── figures/
+│ ├── models/ # trained model artifacts (gitignored, reproducible via notebooks/)
+│ └── model_comparison.csv
 └── environment.yml
 
 ## 7. Tools & Environment
@@ -177,7 +181,7 @@ kit-inhibitor-binding-prediction/
 ## 9. Limitations & Ethical Considerations
 
 - This is a hypothesis-generation portfolio project; no result here should be read as validated drug discovery insight without substantial further wet-lab and clinical work.
-- The selectivity analysis is anchored on very few known data points and should be presented with that caveat prominently, not glossed over. Concretely: every one of the 925 paired WT/D816V compounds, including both named anchors (imatinib, dasatinib), landed in the training set under the scaffold split — there is currently no paired compound in the test set. The in-sample Spearman correlation between predicted and measured selectivity shift (ρ=0.86) is evidence the model *fit* the signal, not that it generalizes to unseen compounds; the anchor-point direction checks are likewise in-sample. Dasatinib additionally has no D816V measurement in this dataset at all, so its literature potency values remain an external reference, not something reproduced here.
+- The selectivity analysis is anchored on very few known data points and should be presented with that caveat prominently, not glossed over. Concretely: every one of the 925 paired WT/D816V compounds, including both named anchors (imatinib, dasatinib), landed in the training set under the scaffold split — there is currently no paired compound in the test set. The in-sample Spearman correlation between predicted and measured selectivity shift (ρ=0.838) is evidence the model *fit* the signal, not that it generalizes to unseen compounds; the anchor-point direction checks are likewise in-sample. Dasatinib additionally has no D816V measurement in this dataset at all, so its literature potency values remain an external reference, not something reproduced here.
 - i-MCAS is discussed only as disease-spectrum context, not as a directly modeled or treated condition in this project.
 - Public bioactivity databases like ChEMBL have known biases (e.g., over-representation of compounds from active drug discovery programs, under-representation of negative/inactive results in some cases) that could skew what the model learns as "typical" KIT-binding chemistry.
 
