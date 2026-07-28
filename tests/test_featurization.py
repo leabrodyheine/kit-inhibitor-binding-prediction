@@ -1,9 +1,14 @@
-"""Unit tests for src/featurization.py (Phase 3: ECFP + ChemBERTa)."""
+"""Unit tests for src/featurization.py (Phase 3: ECFP + ChemBERTa; Phase 5
+prerequisite: the WT/D816V variant indicator)."""
 
 import numpy as np
 import pytest
 
-from featurization import compute_chemberta_embeddings, compute_ecfp_fingerprints
+from featurization import (
+    add_variant_indicator,
+    compute_chemberta_embeddings,
+    compute_ecfp_fingerprints,
+)
 
 TOLUENE = "Cc1ccccc1"
 BENZYL_ALCOHOL = "OCc1ccccc1"
@@ -77,3 +82,43 @@ class TestComputeChembertaEmbeddings:
         # else happened to be in its batch.
         one_at_a_time = compute_chemberta_embeddings(sample_smiles, batch_size=1)
         assert np.allclose(embeddings, one_at_a_time, atol=1e-5)
+
+
+class TestAddVariantIndicator:
+    def test_appends_exactly_one_column(self):
+        X = np.zeros((4, 10))
+        variants = np.array(["WT", "D816V", "WT", "D816V"])
+        result = add_variant_indicator(X, variants)
+        assert result.shape == (4, 11)
+
+    def test_flag_values_match_variant(self):
+        X = np.zeros((4, 3))
+        variants = np.array(["WT", "D816V", "D816V", "WT"])
+        result = add_variant_indicator(X, variants)
+        assert list(result[:, -1]) == [0.0, 1.0, 1.0, 0.0]
+
+    def test_original_columns_are_preserved(self):
+        X = np.array([[1.0, 2.0], [3.0, 4.0]])
+        variants = np.array(["WT", "D816V"])
+        result = add_variant_indicator(X, variants)
+        assert np.array_equal(result[:, :2], X)
+
+    def test_does_not_modify_input_in_place(self):
+        X = np.zeros((2, 3))
+        X_copy = X.copy()
+        add_variant_indicator(X, np.array(["WT", "D816V"]))
+        assert np.array_equal(X, X_copy)
+
+    def test_same_structure_different_variant_rows_become_distinguishable(self):
+        # The whole point: two rows with identical structural features (same
+        # SMILES -> same fingerprint) but different KIT variants must no
+        # longer be identical once the flag is appended.
+        X = np.array([[1.0, 0.0, 1.0], [1.0, 0.0, 1.0]])  # identical fingerprints
+        variants = np.array(["WT", "D816V"])
+        result = add_variant_indicator(X, variants)
+        assert not np.array_equal(result[0], result[1])
+
+    def test_unexpected_variant_value_raises(self):
+        X = np.zeros((2, 3))
+        with pytest.raises(ValueError, match="MUTANT_X"):
+            add_variant_indicator(X, np.array(["WT", "MUTANT_X"]))

@@ -69,3 +69,28 @@ def compute_chemberta_embeddings(
             embeddings.append(mean_pooled.cpu().numpy())
 
     return np.concatenate(embeddings, axis=0).astype(np.float32)
+
+
+def add_variant_indicator(X, kit_variant):
+    """Append a binary WT/D816V indicator column to a feature matrix.
+
+    Motivation (Phase 5 prerequisite): ECFP and ChemBERTa features encode
+    molecular structure only. A compound with both a WT and a D816V
+    bioactivity record has *identical* structural features for both rows, so
+    a model trained on structure alone cannot distinguish them and is
+    structurally incapable of learning a variant-dependent potency shift --
+    it necessarily predicts the same value for both. Appending an explicit
+    variant flag gives the model the information it needs to do so.
+
+    `kit_variant` must contain only the values "WT" and "D816V" (as produced
+    by Phase 2's cleaning pipeline). Returns a new array with one extra
+    column (1.0 = D816V, 0.0 = WT), same dtype family (float) regardless of
+    the input's dtype, and does not modify `X` in place.
+    """
+    kit_variant = np.asarray(kit_variant)
+    unexpected = set(np.unique(kit_variant)) - {"WT", "D816V"}
+    if unexpected:
+        raise ValueError(f"Unexpected kit_variant value(s): {sorted(unexpected)}")
+
+    is_d816v = (kit_variant == "D816V").astype(np.float32).reshape(-1, 1)
+    return np.hstack([np.asarray(X, dtype=np.float32), is_d816v])

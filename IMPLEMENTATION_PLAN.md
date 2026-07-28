@@ -60,6 +60,8 @@ Implements Design Doc §5.3–§5.5.
 
 (Naive mean-baseline RMSE on the same held-out set: 1.233.)
 
+**Addendum — variant-aware model (Phase 5 prerequisite, added after Phase 4 was otherwise complete):** the Phase 4 models predict from structure (ECFP/ChemBERTa) alone, so a compound's WT and D816V rows — identical fingerprint either way — are structurally indistinguishable to them; they necessarily predict the same value regardless of variant. Confirmed directly with imatinib (WT p_value=6.97 vs. D816V p_value=6.01, but one shared prediction from the structure-only model). `add_variant_indicator()` added to `src/featurization.py` (appends a binary WT/D816V flag); retrained XGBoost-on-ECFP (the step 5 winner) on the resulting 2,049-feature input. Held-out metrics *improved slightly* rather than degrading (RMSE 0.849→0.843, R²=0.520→0.526, Spearman 0.702→0.707), and the model now predicts genuinely different values per variant (imatinib: WT=7.01 vs. D816V=6.80, correctly ordered). Saved separately as `results/models/xgb_ecfp_variant_aware.joblib`. Caveat carried into Phase 5: both anchor compounds are in the *train* set (confirmed directly — no paired WT/D816V compound currently lands in test), so the Phase 5 anchor-direction check evaluates in-sample fit for those two compounds, not held-out generalization; stated explicitly rather than glossed over, consistent with Design Doc §5.6/§9's framing of this as an informal validation exercise.
+
 ## Phase 5 — Selectivity Analysis (`notebooks/05_selectivity_analysis.ipynb`)
 
 Implements Design Doc §5.6, using data isolated in Phase 2 and anchors from §4.3.
