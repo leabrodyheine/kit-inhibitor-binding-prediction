@@ -77,10 +77,10 @@ Implements Design Doc §5.6, using data isolated in Phase 2 and anchors from §4
 
 Implements Design Doc §5.7, using PDB structures from §4.2.
 
-- [ ] Pull/inspect the listed PDB structures: 1T45, 1PKG, 4HVS, 6XV9, 6XVA, 6GQJ, 8PQA, 8PQB, 8PQD.
-- [ ] For top predicted mutant-selective and wild-type-potent compounds (or closest structural analogues present in the PDB set), visually inspect binding pose relative to the D816V activation-loop mutation site.
-- [ ] Confirm predictions are at least structurally plausible — no docking simulation required, qualitative check only.
-- [ ] Save annotated structure images/figures to `results/figures/`.
+- [x] Pull/inspect the listed PDB structures: 1T45, 1PKG, 4HVS, 6XV9, 6XVA, 6GQJ, 8PQA, 8PQB, 8PQD. — `download_pdb()`/parsing helpers added to new `src/structural_utils.py`. All 9 downloaded and parsed; residue 816 confirmed = ASP (wild-type numbering) in every structure. 7/9 have a drug-like co-crystallized ligand (1T45 apo, 1PKG only ADP/Mg/phosphotyrosine, matching Design Doc's own description of both).
+- [x] For top predicted mutant-selective and wild-type-potent compounds (or closest structural analogues present in the PDB set), visually inspect binding pose relative to the D816V activation-loop mutation site. — Top 5 per category (by Phase 5's `pred_log_selectivity`, excluding `both_censored` rows) matched to their closest PDB ligand via Tanimoto/ECFP similarity (honestly modest, 0.16–0.33 — these are ChEMBL screening compounds, not the exact crystallized candidates). Best match per category visualized: protein backbone + ligand + highlighted residue 816.
+- [x] Confirm predictions are at least structurally plausible — no docking simulation required, qualitative check only. — Distance from best-match ligand to residue 816 Cα: 18.3 Å (WT-potent, CHEMBL5865518→9VV/8PQD) and 13.1 Å (mutant-selective, CHEMBL5878682→O35/6XV9) — both within the expected ATP-competitive-inhibitor range near the activation loop, verified with an explicit assertion. No docking run, stated explicitly as a non-goal.
+- [x] Save annotated structure images/figures to `results/figures/`. — `results/figures/structural_context_WT-potent.png` and `..._mutant-selective.png`.
 
 ## Phase 7 — Write-Up & Finalization
 

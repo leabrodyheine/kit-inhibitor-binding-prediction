@@ -142,7 +142,8 @@ kit-inhibitor-binding-prediction/
 │ ├── data_utils.py
 │ ├── featurization.py
 │ ├── models.py
-│ └── evaluation.py
+│ ├── evaluation.py
+│ └── structural_utils.py
 ├── results/
 │ └── figures/
 └── environment.yml
@@ -156,6 +157,7 @@ kit-inhibitor-binding-prediction/
 - scikit-learn, XGBoost
 - pandas, NumPy
 - matplotlib/seaborn for figures
+- Biopython (PDB structure parsing, Phase 6) and `requests` (RCSB file/API access)
 
 ## 8. Milestones (Weekend Scope)
 
