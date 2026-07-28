@@ -177,15 +177,19 @@ kit-inhibitor-binding-prediction/
 ## 9. Limitations & Ethical Considerations
 
 - This is a hypothesis-generation portfolio project; no result here should be read as validated drug discovery insight without substantial further wet-lab and clinical work.
-- The selectivity analysis is anchored on very few known data points and should be presented with that caveat prominently, not glossed over.
+- The selectivity analysis is anchored on very few known data points and should be presented with that caveat prominently, not glossed over. Concretely: every one of the 925 paired WT/D816V compounds, including both named anchors (imatinib, dasatinib), landed in the training set under the scaffold split — there is currently no paired compound in the test set. The in-sample Spearman correlation between predicted and measured selectivity shift (ρ=0.86) is evidence the model *fit* the signal, not that it generalizes to unseen compounds; the anchor-point direction checks are likewise in-sample. Dasatinib additionally has no D816V measurement in this dataset at all, so its literature potency values remain an external reference, not something reproduced here.
 - i-MCAS is discussed only as disease-spectrum context, not as a directly modeled or treated condition in this project.
 - Public bioactivity databases like ChEMBL have known biases (e.g., over-representation of compounds from active drug discovery programs, under-representation of negative/inactive results in some cases) that could skew what the model learns as "typical" KIT-binding chemistry.
 
 ## 10. Future Work
 
-- Extend to antibody-based agents (e.g., barzolvolimab-like mechanisms) using protein-level language models (ESM-2) rather than small-molecule chemical models — a genuinely different modeling problem, not a simple extension.
-- Add physics-based docking for a subset of top candidates to complement the qualitative structural check.
-- Extend the same selectivity-prediction framing to other resistance-mutation-prone kinases (e.g., PDGFRA in GIST, which shares structural biology with KIT and appears in some of the same PDB entries).
+None of the following were attempted in this project — listed as concrete next steps, not implied as already covered:
+
+- **Not attempted:** extend to antibody-based agents (e.g., barzolvolimab-like mechanisms) using protein-level language models (ESM-2) rather than small-molecule chemical models — a genuinely different modeling problem, not a simple extension.
+- **Not attempted:** physics-based docking for a subset of top candidates to complement the qualitative structural check (Phase 6 used simple 3D distance to the mutation site, not docking).
+- **Not attempted:** extend the same selectivity-prediction framing to other resistance-mutation-prone kinases (e.g., PDGFRA in GIST, which shares structural biology with KIT and appears in some of the same PDB entries).
+- **Not attempted:** fine-tuning ChemBERTa end-to-end (it was used strictly frozen here — see §5.3/Results); this could plausibly close some or all of the gap to the ECFP baseline and would be a natural first thing to try before concluding fingerprints are simply "better" in general.
+- **Not attempted:** collecting or generating a held-out compound with both WT and D816V measurements — every currently paired compound (including both named anchors) landed in the training set under the scaffold split, so the selectivity anchor check remains in-sample (see §9).
 
 ## 11. References
 

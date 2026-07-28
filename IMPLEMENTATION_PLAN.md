@@ -84,7 +84,7 @@ Implements Design Doc §5.7, using PDB structures from §4.2.
 
 ## Phase 7 — Write-Up & Finalization
 
-- [ ] Replace all "to be filled in" placeholders in README.md `## Results` with actual numbers/findings.
-- [ ] Update Design Doc / README limitations sections if anything surprising surfaced during implementation (e.g., data volume lower than expected, class imbalance worse than expected).
-- [ ] Final pass: confirm every data-handling decision from Phase 2 is documented, and the selectivity analysis caveat (§5.6/§9) is stated prominently, not glossed over.
-- [ ] Optional (time permitting, per Design Doc §10 Future Work — do not scope into this pass): note follow-ups (ESM-2 for antibody agents, docking, PDGFRA extension) as explicit "not attempted" items rather than implying completeness.
+- [x] Replace all "to be filled in" placeholders in README.md `## Results` with actual numbers/findings. — Full Results section written, one subsection per Approach step (data collection/cleaning, binding affinity model + addendum, selectivity analysis, structural sanity check), with the real numbers from Phases 1-6.
+- [x] Update Design Doc / README limitations sections if anything surprising surfaced during implementation. — Both updated with the concrete in-sample/train-set finding for the selectivity anchors (not just a generic caveat), and the dasatinib-has-no-D816V-data gap.
+- [x] Final pass: confirm every data-handling decision from Phase 2 is documented, and the selectivity analysis caveat (§5.6/§9) is stated prominently, not glossed over. — Verified: every Phase 2 checklist item already has inline before/after counts plus a funnel table; Phase 5's caveat now appears in the notebook (§6), README Limitations, and Design Doc §9.
+- [x] Optional: note follow-ups (ESM-2 for antibody agents, docking, PDGFRA extension) as explicit "not attempted" items rather than implying completeness. — Done: Design Doc §10 now explicitly marks each Future Work item "Not attempted," plus two items surfaced during this project specifically (ChemBERTa fine-tuning, collecting a held-out paired compound).

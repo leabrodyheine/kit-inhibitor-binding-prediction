@@ -35,7 +35,41 @@ This work extends the mast cell disease research from my MSc dissertation (*Mach
 
 ## Results
 
-*(To be filled in as the project progresses.)*
+### 1. Data collection & cleaning
+
+8,703 raw KIT bioactivity records pulled from ChEMBL (`CHEMBL1936`), cleaned and standardized down to **5,565 rows** (see [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) Phase 2 for the full funnel and every filtering decision, documented inline with before/after counts). 2,291 records (~26%) referenced the D816V mutation — more mutant-KIT data than initially expected.
+
+### 2. Binding affinity model
+
+Scaffold-split (not random — grouped by Bemis-Murcko scaffold to avoid structurally near-identical compounds leaking across train/test): 4,452 train / 1,113 test rows.
+
+| Model | RMSE | R² | Spearman ρ |
+| --- | --- | --- | --- |
+| XGBoost + ECFP fingerprints | 0.849 | 0.520 | 0.702 |
+| MLP + frozen ChemBERTa embeddings | 1.125 | 0.156 | 0.551 |
+
+Naive mean-baseline RMSE on the same held-out set: 1.233 — both models clearly beat it. XGBoost on plain structural fingerprints beat the ChemBERTa-based model on every metric, in 100% of 1,000 bootstrap resamples of the test set (not a fluke of one fixed split) — a direct example of the "don't assume the fancier representation wins" caution this project set out to test. Most likely explanation: ChemBERTa is used frozen (not fine-tuned) here, and ~4,452 training compounds favors a sample-efficient tree ensemble over a neural net trained from scratch on generic embeddings.
+
+Diagnostic plots (predicted vs. actual, residuals) are in `results/figures/model_diagnostics.png`; full trained models and metrics are in `results/models/` and `results/model_comparison.csv`.
+
+**Addendum:** the models above predict from structure alone, so a compound's wild-type and D816V measurements — identical structural features either way — are indistinguishable to them. Adding a binary variant flag and retraining (`results/models/xgb_ecfp_variant_aware.joblib`) fixed this without hurting held-out performance (RMSE 0.849→0.843, R²=0.520→0.526, Spearman 0.702→0.707), and is the model used for the selectivity analysis below.
+
+### 3. Selectivity analysis
+
+925 compounds have both a WT and a D816V bioactivity record. Selectivity is broadly distributed, not concentrated near "no difference": excluding 65 compounds where both sides are censored at the same bound (an uninformative artifact, not real equipotency), 40.3% are >2-fold more potent against WT, 27.3% >2-fold more potent against D816V, and 32.3% comparable.
+
+Anchor check against the two literature-known compounds (Design Doc §4.3):
+
+- **Imatinib** (known to lose efficacy against D816V): model predicts WT p=7.01 > D816V p=6.80 — correct direction, 1.63× more potent against WT.
+- **Dasatinib** (known to retain comparable potency against both): model predicts a much smaller shift, 1.24× — 2.3× smaller than imatinib's, correctly the *smaller* shift, even though this dataset has no measured D816V value for dasatinib at all (didn't survive cleaning; the model still produces a prediction from structure + the variant flag).
+
+Both directional checks pass, verified with explicit assertions in the notebook, not eyeballed. **This is an in-sample validation exercise on 925 pairs plus two named anchors, not a held-out generalization claim or a standalone selectivity classifier** — see Limitations below.
+
+### 4. Structural sanity check
+
+All 9 PDB structures (Design Doc §4.2) parsed successfully; residue 816 confirmed as **ASP** (wild-type numbering) in every one. 7/9 have a drug-like co-crystallized ligand (1T45 is apo/autoinhibited, 1PKG has only ADP/Mg/phosphotyrosine — matching Design Doc's own description of both).
+
+The top 5 predicted mutant-selective and top 5 predicted WT-potent compounds were matched to their closest structural analogue among the 7 PDB ligands (Tanimoto similarity on ECFP, honestly modest at 0.16–0.33 — these are ChEMBL screening compounds, not the exact drug candidates crystallized). For the best match in each category, the ligand sits 18.3 Å (WT-potent case) and 13.1 Å (mutant-selective case) from residue 816's Cα — both within the geometrically expected range for an ATP-competitive kinase inhibitor near the activation loop. No docking was run; this is a plausibility check, not a binding-pose or affinity claim. Figures: `results/figures/structural_context_*.png`.
 
 ## Limitations
 
