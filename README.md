@@ -45,23 +45,25 @@ Scaffold-split (not random — grouped by Bemis-Murcko scaffold to avoid structu
 
 | Model | RMSE | R² | Spearman ρ |
 | --- | --- | --- | --- |
-| XGBoost + ECFP fingerprints | 0.849 | 0.520 | 0.702 |
+| XGBoost + ECFP fingerprints (tuned) | **0.830** | **0.541** | **0.714** |
 | MLP + frozen ChemBERTa embeddings | 1.125 | 0.156 | 0.551 |
 
 Naive mean-baseline RMSE on the same held-out set: 1.233 — both models clearly beat it. XGBoost on plain structural fingerprints beat the ChemBERTa-based model on every metric, in 100% of 1,000 bootstrap resamples of the test set (not a fluke of one fixed split) — a direct example of the "don't assume the fancier representation wins" caution this project set out to test. Most likely explanation: ChemBERTa is used frozen (not fine-tuned) here, and ~4,452 training compounds favors a sample-efficient tree ensemble over a neural net trained from scratch on generic embeddings.
 
+The XGBoost number above is *tuned*: hyperparameters were selected via `RandomizedSearchCV` (80 candidates × 5 folds) using scaffold-grouped cross-validation (not plain `KFold`, which would repeat the exact leakage problem the train/test scaffold split exists to prevent) on the training set only, with the test set touched exactly once at the end. Tuning improved RMSE from 0.849 (untuned defaults) to 0.830 — a real but modest ~2% gain. That ceiling is expected: Phase 2 found ChEMBL's own repeated measurements of the *same* compound disagree by 0.45–0.8 log units across assay types, a noise floor baked into the labels themselves. No amount of tuning predicts past noise in the target — an RMSE near that range is close to what this data can legitimately support, and claims of near-perfect accuracy on this kind of task would be a red flag (leakage or a bug), not a genuine result.
+
 Diagnostic plots (predicted vs. actual, residuals) are in `results/figures/model_diagnostics.png`; full trained models and metrics are in `results/models/` and `results/model_comparison.csv`.
 
-**Addendum:** the models above predict from structure alone, so a compound's wild-type and D816V measurements — identical structural features either way — are indistinguishable to them. Adding a binary variant flag and retraining (`results/models/xgb_ecfp_variant_aware.joblib`) fixed this without hurting held-out performance (RMSE 0.849→0.843, R²=0.520→0.526, Spearman 0.702→0.707), and is the model used for the selectivity analysis below.
+**Addendum:** the models above predict from structure alone, so a compound's wild-type and D816V measurements — identical structural features either way — are indistinguishable to them. Adding a binary variant flag and retraining (`results/models/xgb_ecfp_variant_aware.joblib`, same tuned hyperparameters) fixed this without hurting held-out performance (tuned RMSE = 0.824, R² = 0.548, Spearman = 0.719 — the best of the three), and is the model used for the selectivity analysis below.
 
 ### 3. Selectivity analysis
 
 925 compounds have both a WT and a D816V bioactivity record. Selectivity is broadly distributed, not concentrated near "no difference": excluding 65 compounds where both sides are censored at the same bound (an uninformative artifact, not real equipotency), 40.3% are >2-fold more potent against WT, 27.3% >2-fold more potent against D816V, and 32.3% comparable.
 
-Anchor check against the two literature-known compounds (Design Doc §4.3):
+Anchor check against the two literature-known compounds (Design Doc §4.3), using the tuned variant-aware model:
 
-- **Imatinib** (known to lose efficacy against D816V): model predicts WT p=7.01 > D816V p=6.80 — correct direction, 1.63× more potent against WT.
-- **Dasatinib** (known to retain comparable potency against both): model predicts a much smaller shift, 1.24× — 2.3× smaller than imatinib's, correctly the *smaller* shift, even though this dataset has no measured D816V value for dasatinib at all (didn't survive cleaning; the model still produces a prediction from structure + the variant flag).
+- **Imatinib** (known to lose efficacy against D816V): model predicts WT p=7.08 > D816V p=6.48 — correct direction, 3.93× more potent against WT (notably close to the measured 9.07× for this compound in the raw data).
+- **Dasatinib** (known to retain comparable potency against both): model predicts a much smaller shift, 1.37× — 4.4× smaller than imatinib's, correctly the *smaller* shift, even though this dataset has no measured D816V value for dasatinib at all (didn't survive cleaning; the model still produces a prediction from structure + the variant flag).
 
 Both directional checks pass, verified with explicit assertions in the notebook, not eyeballed. **This is an in-sample validation exercise on 925 pairs plus two named anchors, not a held-out generalization claim or a standalone selectivity classifier** — see Limitations below.
 
@@ -69,13 +71,14 @@ Both directional checks pass, verified with explicit assertions in the notebook,
 
 All 9 PDB structures (Design Doc §4.2) parsed successfully; residue 816 confirmed as **ASP** (wild-type numbering) in every one. 7/9 have a drug-like co-crystallized ligand (1T45 is apo/autoinhibited, 1PKG has only ADP/Mg/phosphotyrosine — matching Design Doc's own description of both).
 
-The top 5 predicted mutant-selective and top 5 predicted WT-potent compounds were matched to their closest structural analogue among the 7 PDB ligands (Tanimoto similarity on ECFP, honestly modest at 0.16–0.33 — these are ChEMBL screening compounds, not the exact drug candidates crystallized). For the best match in each category, the ligand sits 18.3 Å (WT-potent case) and 13.1 Å (mutant-selective case) from residue 816's Cα — both within the geometrically expected range for an ATP-competitive kinase inhibitor near the activation loop. No docking was run; this is a plausibility check, not a binding-pose or affinity claim. Figures: `results/figures/structural_context_*.png`.
+The top 5 predicted mutant-selective and top 5 predicted WT-potent compounds (per the tuned model) were matched to their closest structural analogue among the 7 PDB ligands (Tanimoto similarity on ECFP, honestly modest at 0.18–0.33 — these are ChEMBL screening compounds, not the exact drug candidates crystallized). For the best match in each category, the ligand sits 18.3 Å (WT-potent case) and 11.5 Å (mutant-selective case) from residue 816's Cα — both within the geometrically expected range for an ATP-competitive kinase inhibitor near the activation loop. No docking was run; this is a plausibility check, not a binding-pose or affinity claim. Figures: `results/figures/structural_context_*.png`.
 
 ## Limitations
 
 - This is a hypothesis-generation and portfolio project, not a validated drug discovery tool — results would need wet-lab confirmation before any biological interpretation is trusted.
 - Training data for the wild-type-vs-mutant selectivity task specifically is limited (most ChEMBL KIT data doesn't report both values for the same compound), so that analysis is treated as a smaller validation exercise layered on top of the main binding-affinity model, not a fully supervised task in its own right. No new model is trained for selectivity — the same potency model is queried twice per compound (once per variant).
-- That validation exercise is explicitly **in-sample, not held-out**: every one of the 925 compounds with both WT and D816V measurements — including both named anchors, imatinib and dasatinib — landed in the training set under the current scaffold split, since there's currently no paired compound in the test set to check against. The in-sample correlation between the model's predicted and measured selectivity shift (Spearman ρ = 0.86 across those 925 pairs) should be read as evidence the model *fit* the signal, not that it generalizes to unseen compounds. Dasatinib additionally has no D816V measurement in this dataset at all (didn't survive cleaning), so its known ~37nM D816V / ~79nM WT potency remains an external literature reference, not something independently reproduced here.
+- That validation exercise is explicitly **in-sample, not held-out**: every one of the 925 compounds with both WT and D816V measurements — including both named anchors, imatinib and dasatinib — landed in the training set under the current scaffold split, since there's currently no paired compound in the test set to check against. The in-sample correlation between the model's predicted and measured selectivity shift (Spearman ρ = 0.84 across those 925 pairs) should be read as evidence the model *fit* the signal, not that it generalizes to unseen compounds. Dasatinib additionally has no D816V measurement in this dataset at all (didn't survive cleaning), so its known ~37nM D816V / ~79nM WT potency remains an external literature reference, not something independently reproduced here.
+- Held-out potency prediction has a real ceiling on this data: Phase 2 found ChEMBL's own repeated measurements of the *same* compound disagree by 0.45–0.8 log units across assay types (a noise floor in the labels themselves). RMSE around 0.82–0.85 on this held-out set is near that ceiling — expect this, not near-perfect accuracy, from any model trained on this data honestly.
 - i-MCAS is included here for disease-spectrum context, not as a directly modeled indication — there is no confirmed KIT-targeting mutation in i-MCAS, and no confirmed clinical trial data (as of this writing) testing wild-type-KIT-targeting agents specifically in i-MCAS patients.
 
 ## Tech Stack
