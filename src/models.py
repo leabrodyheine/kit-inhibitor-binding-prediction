@@ -9,15 +9,12 @@ from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
 
 
-def train_xgboost_ecfp(X_train, y_train, **xgb_kwargs):
-    """Train an XGBoost regressor on ECFP fingerprint features to predict
-    potency (pIC50/pKi/pKd, on the common p_value scale from Phase 2).
-
-    Design Doc §5.3: gradient-boosted trees on fingerprints are a realistic,
-    strong baseline for a small-to-medium dataset and shouldn't be skipped in
-    favor of jumping straight to the ChemBERTa-based model.
-
-    Any keyword in `xgb_kwargs` overrides the corresponding default below.
+def _build_xgb_ecfp(**xgb_kwargs):
+    """Construct an unfitted XGBoost-on-ECFP regressor with `train_xgboost_ecfp`'s
+    default hyperparameters. Factored out so cross-validated out-of-fold
+    predictions (e.g. for ensemble weight selection) use the exact same
+    hyperparameters as the real trained model, not a hand-duplicated copy
+    that could silently drift out of sync.
     """
     params = dict(
         n_estimators=300,
@@ -29,9 +26,42 @@ def train_xgboost_ecfp(X_train, y_train, **xgb_kwargs):
         n_jobs=-1,
     )
     params.update(xgb_kwargs)
-    model = XGBRegressor(**params)
+    return XGBRegressor(**params)
+
+
+def train_xgboost_ecfp(X_train, y_train, **xgb_kwargs):
+    """Train an XGBoost regressor on ECFP fingerprint features to predict
+    potency (pIC50/pKi/pKd, on the common p_value scale from Phase 2).
+
+    Design Doc §5.3: gradient-boosted trees on fingerprints are a realistic,
+    strong baseline for a small-to-medium dataset and shouldn't be skipped in
+    favor of jumping straight to the ChemBERTa-based model.
+
+    Any keyword in `xgb_kwargs` overrides the corresponding default below.
+    """
+    model = _build_xgb_ecfp(**xgb_kwargs)
     model.fit(X_train, y_train)
     return model
+
+
+def _build_mlp_chemberta(**mlp_kwargs):
+    """Construct an unfitted StandardScaler+MLP pipeline with
+    `train_mlp_chemberta`'s default hyperparameters. Factored out for the
+    same reason as `_build_xgb_ecfp` above.
+    """
+    params = dict(
+        hidden_layer_sizes=(128, 32),
+        activation="relu",
+        alpha=1e-3,
+        learning_rate_init=1e-3,
+        max_iter=2000,
+        early_stopping=True,
+        n_iter_no_change=20,
+        validation_fraction=0.1,
+        random_state=0,
+    )
+    params.update(mlp_kwargs)
+    return make_pipeline(StandardScaler(), MLPRegressor(**params))
 
 
 def train_mlp_chemberta(X_train, y_train, **mlp_kwargs):
@@ -46,19 +76,7 @@ def train_mlp_chemberta(X_train, y_train, **mlp_kwargs):
     Any keyword in `mlp_kwargs` overrides the corresponding MLPRegressor
     default below.
     """
-    params = dict(
-        hidden_layer_sizes=(128, 32),
-        activation="relu",
-        alpha=1e-3,
-        learning_rate_init=1e-3,
-        max_iter=2000,
-        early_stopping=True,
-        n_iter_no_change=20,
-        validation_fraction=0.1,
-        random_state=0,
-    )
-    params.update(mlp_kwargs)
-    model = make_pipeline(StandardScaler(), MLPRegressor(**params))
+    model = _build_mlp_chemberta(**mlp_kwargs)
     model.fit(X_train, y_train)
     return model
 
@@ -121,3 +139,28 @@ def predict_both_variants(model, fingerprints):
     X_wt = np.hstack([fingerprints, np.zeros((n, 1), dtype=np.float32)])
     X_d816v = np.hstack([fingerprints, np.ones((n, 1), dtype=np.float32)])
     return model.predict(X_wt), model.predict(X_d816v)
+
+
+def find_best_ensemble_weight(y_true, preds_a, preds_b, step=0.01):
+    """Grid-search the weight alpha in [0, 1] for a two-model weighted-average
+    ensemble (`alpha * preds_a + (1 - alpha) * preds_b`) that minimizes RMSE
+    against `y_true`.
+
+    Intended to be called on out-of-fold cross-validation predictions (or
+    some other held-out-from-training set), never on the final test set --
+    otherwise the ensemble weight itself would be fit against the same data
+    used to report the final metric, the same leakage problem a train/test
+    split exists to prevent.
+
+    Returns (best_alpha, best_rmse).
+    """
+    y_true = np.asarray(y_true)
+    preds_a = np.asarray(preds_a)
+    preds_b = np.asarray(preds_b)
+
+    alphas = np.arange(0.0, 1.0 + step / 2, step)
+    rmses = np.sqrt(
+        np.mean((y_true[None, :] - (alphas[:, None] * preds_a[None, :] + (1 - alphas[:, None]) * preds_b[None, :])) ** 2, axis=1)
+    )
+    best_idx = int(np.argmin(rmses))
+    return float(alphas[best_idx]), float(rmses[best_idx])

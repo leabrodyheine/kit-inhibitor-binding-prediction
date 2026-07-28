@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 
 from models import (
+    find_best_ensemble_weight,
     predict_both_variants,
     train_mlp_chemberta,
     train_xgboost_ecfp,
@@ -195,3 +196,48 @@ class TestTuneXgboostEcfp:
             train_groups = set(groups[train_fold_idx])
             val_groups = set(groups[val_fold_idx])
             assert train_groups.isdisjoint(val_groups)
+
+
+class TestFindBestEnsembleWeight:
+    def test_prefers_the_perfect_model_a(self):
+        y_true = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        preds_a = y_true.copy()
+        preds_b = y_true + 5.0
+        alpha, rmse = find_best_ensemble_weight(y_true, preds_a, preds_b, step=0.01)
+        assert alpha == pytest.approx(1.0, abs=0.02)
+        assert rmse == pytest.approx(0.0, abs=1e-6)
+
+    def test_prefers_the_perfect_model_b(self):
+        y_true = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        preds_a = y_true + 5.0
+        preds_b = y_true.copy()
+        alpha, rmse = find_best_ensemble_weight(y_true, preds_a, preds_b, step=0.01)
+        assert alpha == pytest.approx(0.0, abs=0.02)
+        assert rmse == pytest.approx(0.0, abs=1e-6)
+
+    def test_identical_models_give_their_own_rmse_at_any_weight(self):
+        y_true = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+        preds = y_true + 1.0
+        _, rmse = find_best_ensemble_weight(y_true, preds, preds, step=0.1)
+        assert rmse == pytest.approx(1.0)
+
+    def test_returns_alpha_within_bounds(self):
+        rng = np.random.RandomState(0)
+        y_true = rng.normal(size=50)
+        preds_a = y_true + rng.normal(scale=0.5, size=50)
+        preds_b = y_true + rng.normal(scale=0.8, size=50)
+        alpha, _ = find_best_ensemble_weight(y_true, preds_a, preds_b, step=0.05)
+        assert 0.0 <= alpha <= 1.0
+
+    def test_ensemble_never_worse_than_the_worse_single_model(self):
+        # A property that must hold given the grid search includes both
+        # endpoints (alpha=0 and alpha=1): the best found RMSE can never
+        # exceed the worse of the two individual models' RMSE.
+        rng = np.random.RandomState(1)
+        y_true = rng.normal(size=100)
+        preds_a = y_true + rng.normal(scale=0.5, size=100)
+        preds_b = y_true + rng.normal(scale=1.5, size=100)
+        rmse_a = np.sqrt(np.mean((y_true - preds_a) ** 2))
+        rmse_b = np.sqrt(np.mean((y_true - preds_b) ** 2))
+        _, best_rmse = find_best_ensemble_weight(y_true, preds_a, preds_b, step=0.05)
+        assert best_rmse <= max(rmse_a, rmse_b) + 1e-9
