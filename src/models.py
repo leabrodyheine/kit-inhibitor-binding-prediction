@@ -1,5 +1,6 @@
 """Model definitions and training helpers (Phase 4)."""
 
+import numpy as np
 from sklearn.neural_network import MLPRegressor
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -58,3 +59,21 @@ def train_mlp_chemberta(X_train, y_train, **mlp_kwargs):
     model = make_pipeline(StandardScaler(), MLPRegressor(**params))
     model.fit(X_train, y_train)
     return model
+
+
+def predict_both_variants(model, fingerprints):
+    """Given a variant-aware model (trained on features from
+    `featurization.add_variant_indicator`) and one or more compounds'
+    *raw* structural fingerprints (without the variant flag column), predict
+    potency under both KIT variants by appending flag=0 (WT) and flag=1
+    (D816V) respectively (Phase 5 step 2).
+
+    `fingerprints` may be a single compound's 1D feature vector or a 2D
+    (n_compounds, n_features) array. Returns (pred_wt, pred_d816v) arrays,
+    one prediction per compound.
+    """
+    fingerprints = np.atleast_2d(fingerprints)
+    n = fingerprints.shape[0]
+    X_wt = np.hstack([fingerprints, np.zeros((n, 1), dtype=np.float32)])
+    X_d816v = np.hstack([fingerprints, np.ones((n, 1), dtype=np.float32)])
+    return model.predict(X_wt), model.predict(X_d816v)

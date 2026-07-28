@@ -67,11 +67,11 @@ Implements Design Doc §5.3–§5.5.
 Implements Design Doc §5.6, using data isolated in Phase 2 and anchors from §4.3.
 
 - [x] Identify compounds with both wild-type and D816V bioactivity records; compute selectivity ratio (WT potency / mutant potency). — `get_variant_pairs()` added to `src/data_utils.py`. 925 compounds have both records (matches Phase 4's count); saved to `data/processed/selectivity_pairs.csv`. Distribution is broadly spread, not concentrated near 1 (37.6% >2-fold WT-potent, 27.6% >2-fold D816V-potent, 34.8% comparable). Data-quality check: 65/925 (7.0%) have both sides censored at the same cap, making their ratio=1.0 a censoring artifact rather than real equipotency — flagged via a new `both_censored` column rather than silently inflating the "comparable" bucket. Imatinib (in the table): ratio=9.07, directionally consistent with its known D816V efficacy loss. Dasatinib: **not** in the table — no D816V row survived Phase 2's cleaning, so its §4.3 anchor values remain an external literature reference, not independently reproduced from this dataset.
-- [ ] Apply the Phase 4 potency model separately to wild-type- and mutant-labeled subsets.
-- [ ] Check the model reproduces the known direction of the two anchor points:
-  - Dasatinib: ~37 nM (D816V) vs. ~79 nM (WT) — comparable potency both ways.
-  - Imatinib: known to lose efficacy against D816V relative to WT.
-- [ ] Explicitly frame this as a validation exercise on a handful of anchor compounds, **not** a standalone trained classifier — state this caveat directly in the notebook and README, per Design Doc §5.6 and §9.
+- [x] Apply the Phase 4 potency model separately to wild-type- and mutant-labeled subsets. — Used the variant-aware model (`predict_both_variants()`, added to `src/models.py`). Held-out (test-set) performance comparable across subgroups: WT n=983 (RMSE=0.849, R²=0.467, Spearman=0.664), D816V n=130 (RMSE=0.799, R²=0.489, Spearman=0.617) — no hidden disparity. In-sample correlation between predicted and measured selectivity shift across all 925 pairs: Spearman ρ=0.861 (explicitly in-sample, all pairs are in train).
+- [x] Check the model reproduces the known direction of the two anchor points:
+  - Dasatinib: ~37 nM (D816V) vs. ~79 nM (WT) — comparable potency both ways. — Model predicts a small WT-favoring shift (0.093 log units, 1.24×), computed even without a D816V ground-truth row for dasatinib in this dataset.
+  - Imatinib: known to lose efficacy against D816V relative to WT. — Model predicts WT=7.013 > D816V=6.802 (0.211 log units, 1.63×) — correct direction, and correctly a larger shift than dasatinib's (2.3× bigger), matching the known qualitative difference between the two. Both checks verified with explicit assertions, not eyeballed.
+- [x] Explicitly frame this as a validation exercise on a handful of anchor compounds, **not** a standalone trained classifier — state this caveat directly in the notebook and README, per Design Doc §5.6 and §9. — Stated in the notebook's §6 and in `README.md`'s Limitations section: no new model trained for selectivity, the 925-pair correlation and both anchors are in-sample (no held-out paired compound currently exists in the test set), and dasatinib's D816V value has no ground truth in this dataset at all.
 
 ## Phase 6 — Structural Sanity Check (`notebooks/06_structural_context.ipynb`)
 

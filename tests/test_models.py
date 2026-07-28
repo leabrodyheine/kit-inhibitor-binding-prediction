@@ -1,10 +1,11 @@
 """Unit tests for src/models.py (Phase 4 steps 2-3: XGBoost-on-ECFP baseline
-and MLP-on-ChemBERTa comparison model)."""
+and MLP-on-ChemBERTa comparison model; Phase 5 step 2: variant-conditioned
+prediction helper)."""
 
 import numpy as np
 import pytest
 
-from models import train_mlp_chemberta, train_xgboost_ecfp
+from models import predict_both_variants, train_mlp_chemberta, train_xgboost_ecfp
 
 
 @pytest.fixture
@@ -100,3 +101,47 @@ class TestTrainMlpChemberta:
         model = train_mlp_chemberta(X, y)
         scaler = model.named_steps["standardscaler"]
         assert np.allclose(scaler.mean_, X.mean(axis=0), atol=1e-6)
+
+
+@pytest.fixture
+def variant_aware_model_and_data():
+    # Synthetic data where the last (variant-flag) column has a known,
+    # learnable +3 effect on the label -- lets tests check that
+    # predict_both_variants actually appends 0 then 1, not e.g. both zeros.
+    rng = np.random.RandomState(0)
+    n = 300
+    X_struct = rng.randint(0, 2, size=(n, 20)).astype(np.float32)
+    flag = rng.randint(0, 2, size=n).astype(np.float32)
+    y = X_struct[:, 0] * 5 + flag * 3
+    X = np.hstack([X_struct, flag.reshape(-1, 1)])
+    model = train_xgboost_ecfp(X, y, n_estimators=100)
+    return model, X_struct
+
+
+class TestPredictBothVariants:
+    def test_returns_two_arrays_of_correct_length(self, variant_aware_model_and_data):
+        model, X_struct = variant_aware_model_and_data
+        pred_wt, pred_d816v = predict_both_variants(model, X_struct)
+        assert pred_wt.shape == (len(X_struct),)
+        assert pred_d816v.shape == (len(X_struct),)
+
+    def test_single_1d_fingerprint_input_works(self, variant_aware_model_and_data):
+        model, X_struct = variant_aware_model_and_data
+        pred_wt, pred_d816v = predict_both_variants(model, X_struct[0])
+        assert pred_wt.shape == (1,)
+        assert pred_d816v.shape == (1,)
+
+    def test_flag_actually_appended_as_zero_then_one(self, variant_aware_model_and_data):
+        # The synthetic label adds +3 exactly when the flag column is 1, so
+        # the mean difference between the two prediction sets should be
+        # close to +3 -- confirming flag=0 was used for pred_wt and flag=1
+        # for pred_d816v (not, say, both flag=0, which would give ~0 diff).
+        model, X_struct = variant_aware_model_and_data
+        pred_wt, pred_d816v = predict_both_variants(model, X_struct)
+        mean_diff = (pred_d816v - pred_wt).mean()
+        assert mean_diff == pytest.approx(3.0, abs=0.5)
+
+    def test_predictions_differ_when_flag_matters(self, variant_aware_model_and_data):
+        model, X_struct = variant_aware_model_and_data
+        pred_wt, pred_d816v = predict_both_variants(model, X_struct)
+        assert not np.allclose(pred_wt, pred_d816v)
