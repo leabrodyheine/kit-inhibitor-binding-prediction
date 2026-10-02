@@ -15,7 +15,7 @@ This work extends the mast cell disease research from my MSc dissertation (*Mach
 
 ## Scope
 
-- **Modality**: small molecules only. Antibody-based approaches (e.g., barzolvolimab) work through a different mechanism and would require protein-level embedding methods (e.g., ESM-2) rather than the chemical-structure models used here — noted as future work, not attempted in this repo.
+- **Modality**: small molecules only. Antibody-based approaches (e.g., barzolvolimab) work through a different mechanism and would require protein-level embedding methods (e.g., ESM-2), so they are intentionally outside this repository's scope.
 - **Target**: KIT kinase domain, wild-type and D816V mutant.
 - **Task**: binding affinity / potency prediction, with a secondary analysis of mutant-vs-wild-type selectivity where paired data is available.
 
